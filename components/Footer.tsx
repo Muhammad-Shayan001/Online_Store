@@ -27,7 +27,7 @@ const Footer: React.FC = () => {
               <img
                 src={logoImage}
                 alt="Logo"
-                className="h-16 w-auto object-contain brightness-0 invert drop-shadow-sm hover:scale-105 transition-transform duration-300"
+                className="h-12 w-auto object-contain brightness-0 invert drop-shadow-sm hover:scale-105 transition-transform duration-300"
               />
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed mb-4">

@@ -41,8 +41,7 @@ const Navbar: React.FC<NavbarProps> = ({ user, cartCount, searchQuery, setSearch
               <img
                 src={logoImage}
                 alt="Logo"
-                className="h-48 w-auto object-contain"
-                style={{ maxHeight: '100%' }}
+                className="h-12 w-auto object-contain"
               />
             </Link>
           </motion.div>

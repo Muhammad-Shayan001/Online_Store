@@ -33,6 +33,7 @@
     "react-helmet-async": "^2.0.5",
     "streamifier": "^0.1.1",
     "tailwindcss": "^4.1.18",
+    "twilio": "^5.12.2",
     "winston": "^3.19.0"
   },
   "devDependencies": {

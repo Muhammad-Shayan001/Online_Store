@@ -127,8 +127,44 @@ function saveHistory(history: ChatMessage[]) {
 
 let chatHistory: ChatMessage[] = loadHistory();
 
+// --- Offline fallback for common questions ---
+function getOfflineFallback(message: string): string | null {
+  const lower = message.toLowerCase();
+
+  if (lower.match(/\b(track|where.*(order|package)|order.*status)\b/)) {
+    return "To track your order, go to your **Profile** page and check **Order History**. You'll see real-time status updates there! If you need more help, email us at onlinestore7188@gmail.com 📦";
+  }
+  if (lower.match(/\b(product|sell|catalog|what.*have)\b/)) {
+    return "We sell premium curated products including **Precision Timepiece** ($299), **SoundWave Elite** headphones ($199), **Luxe Leather Tote** ($150), **Glow Skin Serum** ($45), and **Smart Desk Lamp** ($79). Check out our full catalog on the **Products** page! 🛍️";
+  }
+  if (lower.match(/\b(ship|deliver|how long)\b/)) {
+    return "We charge a flat **$10 shipping fee** on all orders. Delivery typically takes **5-7 business days** with full tracking provided! 🚚";
+  }
+  if (lower.match(/\b(return|refund|exchange|money back)\b/)) {
+    return "We accept returns within **30 days** of purchase. Items must be unused and in original packaging. Refunds are processed within **5-10 business days**. Visit our **Refund Policy** page for full details! 💰";
+  }
+  if (lower.match(/\b(contact|email|support|help|reach)\b/)) {
+    return "You can reach us at **onlinestore7188@gmail.com** or use the **Contact** page. You can also create a **support ticket** from your profile for order-specific issues! 📧";
+  }
+  if (lower.match(/\b(pay|payment|card|checkout)\b/)) {
+    return "We accept all major **credit cards**, **debit cards**, and **digital payment methods**. Checkout is fully encrypted and secure! 💳";
+  }
+  if (lower.match(/\b(hi|hello|hey|good morning|good evening|howdy|greet)\b/)) {
+    return "Hey there! 👋 Due to high traffic, I'm currently operating in offline mode. I can still help with common questions about our **products**, **shipping**, **returns**, and **orders**. What would you like to know?";
+  }
+
+  return null;
+}
+
 // --- Main send function ---
 export async function sendChatMessage(userMessage: string, context?: ChatContext): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || '';
+  
+  if (!apiKey) {
+    const fallback = getOfflineFallback(userMessage);
+    return fallback || "I'm currently in offline mode. For help, please email us at **onlinestore7188@gmail.com** or visit our **Contact** page! 📧";
+  }
+
   try {
     const systemPrompt = buildSystemPrompt(context);
 
@@ -136,10 +172,12 @@ export async function sendChatMessage(userMessage: string, context?: ChatContext
     const systemMessage = { role: 'user' as const, parts: [{ text: `[System Instructions - follow these strictly]\n${systemPrompt}` }] };
     const systemAck = { role: 'model' as const, parts: [{ text: 'Understood! I\'ll follow these instructions and help users with the Online Store. How can I help?' }] };
 
+    const trimmedHistory = chatHistory.length > 20 ? chatHistory.slice(-20) : chatHistory;
+
     const contents = [
       systemMessage,
       systemAck,
-      ...chatHistory,
+      ...trimmedHistory,
       { role: 'user' as const, parts: [{ text: userMessage }] }
     ];
 
@@ -147,7 +185,7 @@ export async function sendChatMessage(userMessage: string, context?: ChatContext
       model: 'gemini-2.0-flash',
       contents,
       config: {
-        maxOutputTokens: 400,
+        maxOutputTokens: 300,
         temperature: 0.7,
       }
     });
@@ -168,8 +206,21 @@ export async function sendChatMessage(userMessage: string, context?: ChatContext
     return reply;
   } catch (error: any) {
     console.error('Chat AI Error:', error?.message || error);
-    console.error('API Key present:', !!(process.env.GEMINI_API_KEY || process.env.API_KEY));
-    return "I'm having trouble connecting right now. Please try again in a moment, or email us at onlinestore7188@gmail.com for help! 📧";
+    console.error('API Key present:', !!apiKey);
+    
+    // Fallback logic
+    const fallback = getOfflineFallback(userMessage);
+    if (fallback) return fallback;
+
+    const isRateLimit = error?.status === 429 || 
+      error?.message?.includes('429') || 
+      error?.message?.toLowerCase()?.includes('rate limit');
+      
+    if (isRateLimit) {
+        return "I'm receiving too many requests right now and I'm currently rate-limited. 😅 However, I can still answer common questions about **shipping**, **returns**, and **products**. How can I help you with those?";
+    }
+
+    return "I'm currently operating in offline mode due to an API quota issue. 🤖 I can answer common questions about **shipping**, **returns**, **products**, and **contact info**, but for anything else, please email **onlinestore7188@gmail.com**! 📧";
   }
 }
 
