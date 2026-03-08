@@ -45,11 +45,6 @@ app.use(morgan('combined', {
     skip: skipLog
 })); // Log requests to winston
 
-// Routes Placeholder
-app.get('/', (req, res) => {
-  res.send('API is running...');
-});
-
 // Import Routes
 const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
@@ -66,6 +61,19 @@ app.use('/api/tickets', ticketRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/coupons', couponRoutes);
+
+// Serve frontend in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '..', 'frontend')));
+
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html'));
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.send('API is running...');
+  });
+}
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {

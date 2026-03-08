@@ -1,33 +1,19 @@
-# ============ Backend Dependencies ============
-FROM node:20-alpine AS backend-build
-
-WORKDIR /app/backend
-
-COPY backend/package*.json ./
-RUN npm install --omit=dev
-COPY backend/ .
-
-# ============ Production ============
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Install nginx
-RUN apk add --no-cache nginx
+# Copy and install backend dependencies
+COPY backend/package*.json ./backend/
+RUN cd backend && npm install --omit=dev
 
-# Copy backend (with node_modules from build stage)
-COPY --from=backend-build /app/backend /app/backend
+# Copy backend source
+COPY backend/ ./backend/
 
-# Copy pre-built frontend (built locally with npm run build)
-COPY dist/ /app/frontend
+# Copy pre-built frontend (run "npm run build" locally first)
+COPY dist/ ./frontend/
 
-# Copy nginx config
-COPY nginx.conf /etc/nginx/http.d/default.conf
+ENV NODE_ENV=production
 
-# Create startup script
-RUN printf '#!/bin/sh\nnginx\ncd /app/backend && node server.js\n' > /app/start.sh && \
-    chmod +x /app/start.sh
+EXPOSE 5000
 
-EXPOSE 80 5000
-
-CMD ["/app/start.sh"]
+CMD ["node", "backend/server.js"]
