@@ -27,10 +27,15 @@ app.use(limiter);
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-  origin: process.env.FRONTEND_URL, 
+  origin: process.env.FRONTEND_URL || 'https://onlinestore-production-3a85.up.railway.app', 
   credentials: true
 }));
-app.use(helmet());
+
+// Configure helmet for production (allow inline scripts for React)
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
 
 // Custom skip function for Morgan to ignore 401 on profile check (avoids log noise)
 // Also skipping successful requests (status < 400) to keep terminal clean
