@@ -14,6 +14,14 @@ const cookieParser = require('cookie-parser');
 
 const app = express();
 
+// Trust the Railway proxy so rate limiter doesn't block the load balancer
+app.set('trust proxy', 1);
+
+// Health check endpoint MUST be before rate limiter so Railway pings don't get blocked
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // Rate Limiting: 100 requests per 15 minutes
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
@@ -69,11 +77,6 @@ const ticketRoutes = require('./routes/ticketRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const couponRoutes = require('./routes/couponRoutes');
-
-// Health check endpoint (no DB required - must be before rate limiter for Railway)
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
-});
 
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
