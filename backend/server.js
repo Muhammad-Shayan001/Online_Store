@@ -27,7 +27,11 @@ app.use(limiter);
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'https://onlinestore-production-3a85.up.railway.app', 
+  origin: [
+    process.env.FRONTEND_URL, 
+    'https://online-store-2tw6.vercel.app', 
+    'http://localhost:5173'
+  ].filter(Boolean), 
   credentials: true
 }));
 

@@ -2,10 +2,11 @@ import axios from 'axios';
 
 // Create an Axios instance
 const api = axios.create({
-  baseURL: '/api', // Proxied by Vite to localhost:5000
+  baseURL: import.meta.env.PROD ? 'https://onlinestore-production-3a85.up.railway.app/api' : '/api',
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Crucial for cross-origin cookies between Vercel and Railway
 });
 
 // Add a request interceptor to include token if we stored it (Wait, we use httpOnly cookies)
