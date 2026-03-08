@@ -1,0 +1,6 @@
+
+{
+  "name": "Online Store - Premium Shopping",
+  "description": "A feature-rich, high-performance e-commerce platform with guest and member roles, AI-powered product insights, and a comprehensive admin management system.",
+  "requestFramePermissions": ["camera", "microphone"]
+}

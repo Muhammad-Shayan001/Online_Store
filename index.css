@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #f0f9ff;
+  --color-primary-100: #e0f2fe;
+  --color-primary-500: #0ea5e9;
+  --color-primary-600: #0284c7;
+  --color-primary-700: #0369a1;
+  --color-secondary: #64748b;
+
+  --animate-fade-in: fadeIn 0.5s ease-out;
+  --animate-slide-up: slideUp 0.5s ease-out;
+  --animate-slow-zoom: slowZoom 20s infinite alternate;
+
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  @keyframes slideUp {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes slowZoom {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.1); }
+  }
+}
+
+@utility animate-delay-100 {
+  animation-delay: 100ms;
+}
+@utility animate-delay-200 {
+  animation-delay: 200ms;
+}
+@utility animate-delay-300 {
+  animation-delay: 300ms;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+  background-color: #fafaf9;
+  /* Stylish subtle dot pattern for the whole website */
+  background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Custom Premium Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+  border: 2px solid #f8fafc;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Custom Text Selection */
+::selection {
+  background: #6366f1; /* Indigo 500 */
+  color: #ffffff;
+}

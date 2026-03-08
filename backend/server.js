@@ -1,0 +1,126 @@
+const express = require('express');
+const dotenv = require('dotenv');
+
+// Load env vars immediately
+dotenv.config();
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit'); // Security Hardening
+const path = require('path');
+const connectDB = require('./config/db');
+const logger = require('./utils/logger'); // Centralized Logs
+const cookieParser = require('cookie-parser');
+
+const app = express();
+
+// Rate Limiting: 100 requests per 15 minutes
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  limit: 100,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+app.use(limiter);
+
+app.use(express.json());
+app.use(cookieParser());
+app.use(cors({
+  origin: process.env.FRONTEND_URL, 
+  credentials: true
+}));
+app.use(helmet());
+
+// Custom skip function for Morgan to ignore 401 on profile check (avoids log noise)
+// Also skipping successful requests (status < 400) to keep terminal clean
+const skipLog = (req, res) => {
+    const isProfile401 = req.url.includes('/api/users/profile') && res.statusCode === 401;
+    const isSuccess = res.statusCode < 400;
+    return isProfile401 || isSuccess;
+};
+
+app.use(morgan('combined', { 
+    stream: { write: message => logger.info(message.trim()) },
+    skip: skipLog
+})); // Log requests to winston
+
+// Routes Placeholder
+app.get('/', (req, res) => {
+  res.send('API is running...');
+});
+
+// Import Routes
+const userRoutes = require('./routes/userRoutes');
+const productRoutes = require('./routes/productRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+const ticketRoutes = require('./routes/ticketRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
+const couponRoutes = require('./routes/couponRoutes');
+
+app.use('/api/users', userRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/tickets', ticketRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/coupons', couponRoutes);
+
+// Error Handling Middleware
+app.use((err, req, res, next) => {
+  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  res.status(statusCode);
+  res.json({
+    message: err.message,
+    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+  });
+});
+
+const PORT = process.env.PORT || 5000;
+
+connectDB().then(() => {
+    const server = app.listen(PORT, () => {
+        console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+    });
+
+    server.on('error', (e) => {
+        if (e.code === 'EADDRINUSE') {
+            console.error(`Port ${PORT} is busy, retrying in 1 second...`);
+            setTimeout(() => {
+                server.close();
+                server.listen(PORT);
+            }, 1000);
+        } else {
+             console.error(e);
+        }
+    });
+
+    // Handle graceful shutdown to prevent EADDRINUSE
+    process.on('SIGTERM', () => {
+        console.info('SIGTERM signal received. Closing server.');
+        server.close(() => {
+            console.log('Server closed.');
+            process.exit(0);
+        });
+    });
+
+    process.on('SIGINT', () => {
+        console.info('SIGINT signal received. Closing server.');
+        server.close(() => {
+            console.log('Server closed.');
+            process.exit(0);
+        });
+    });
+
+    // Handle Nodemon restart signal explicitly
+    process.once('SIGUSR2', () => {
+        console.info('SIGUSR2 received (Nodemon restart). Closing server.');
+        server.close(() => {
+            process.kill(process.pid, 'SIGUSR2');
+        });
+    });
+}).catch(err => {
+    console.error("Failed to connect to Database", err);
+    process.exit(1);
+});
