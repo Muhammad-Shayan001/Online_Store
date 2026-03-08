@@ -26,13 +26,20 @@ app.use(limiter);
 
 app.use(express.json());
 app.use(cookieParser());
+
+// Robust CORS for Vercel and Railway
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL, 
-    'https://online-store-2tw6.vercel.app', 
-    'http://localhost:5173'
-  ].filter(Boolean), 
-  credentials: true
+  origin: function (origin, callback) {
+    // Allow Vercel, localhost, or requests with no origin (like mobile apps/postman)
+    if (!origin || origin.includes('vercel.app') || origin.includes('localhost')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
 }));
 
 // Configure helmet for production (allow inline scripts for React)
