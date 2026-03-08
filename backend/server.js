@@ -54,6 +54,11 @@ const adminRoutes = require('./routes/adminRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const couponRoutes = require('./routes/couponRoutes');
 
+// Health check endpoint (no DB required - must be before rate limiter for Railway)
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
@@ -87,48 +92,51 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
+// Start HTTP server immediately (so Railway healthcheck passes)
+const server = app.listen(PORT, () => {
+    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+});
+
+// Connect to MongoDB in the background
 connectDB().then(() => {
-    const server = app.listen(PORT, () => {
-        console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-    });
-
-    server.on('error', (e) => {
-        if (e.code === 'EADDRINUSE') {
-            console.error(`Port ${PORT} is busy, retrying in 1 second...`);
-            setTimeout(() => {
-                server.close();
-                server.listen(PORT);
-            }, 1000);
-        } else {
-             console.error(e);
-        }
-    });
-
-    // Handle graceful shutdown to prevent EADDRINUSE
-    process.on('SIGTERM', () => {
-        console.info('SIGTERM signal received. Closing server.');
-        server.close(() => {
-            console.log('Server closed.');
-            process.exit(0);
-        });
-    });
-
-    process.on('SIGINT', () => {
-        console.info('SIGINT signal received. Closing server.');
-        server.close(() => {
-            console.log('Server closed.');
-            process.exit(0);
-        });
-    });
-
-    // Handle Nodemon restart signal explicitly
-    process.once('SIGUSR2', () => {
-        console.info('SIGUSR2 received (Nodemon restart). Closing server.');
-        server.close(() => {
-            process.kill(process.pid, 'SIGUSR2');
-        });
-    });
+    console.log('Database connected successfully');
 }).catch(err => {
     console.error("Failed to connect to Database", err);
-    process.exit(1);
+});
+
+server.on('error', (e) => {
+    if (e.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is busy, retrying in 1 second...`);
+        setTimeout(() => {
+            server.close();
+            server.listen(PORT);
+        }, 1000);
+    } else {
+         console.error(e);
+    }
+});
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+    console.info('SIGTERM signal received. Closing server.');
+    server.close(() => {
+        console.log('Server closed.');
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', () => {
+    console.info('SIGINT signal received. Closing server.');
+    server.close(() => {
+        console.log('Server closed.');
+        process.exit(0);
+    });
+});
+
+// Handle Nodemon restart signal explicitly
+process.once('SIGUSR2', () => {
+    console.info('SIGUSR2 received (Nodemon restart). Closing server.');
+    server.close(() => {
+        process.kill(process.pid, 'SIGUSR2');
+    });
 });
