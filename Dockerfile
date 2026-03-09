@@ -23,6 +23,4 @@ RUN cd backend && npm install --omit=dev
 
 ENV NODE_ENV=production
 
-EXPOSE 5000
-
 CMD ["node", "backend/server.js"]
