@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create an Axios instance
 const api = axios.create({
-  baseURL: import.meta.env.PROD ? 'https://onlinestore-production-3a85.up.railway.app/api' : '/api',
+  baseURL: '/api',
   headers: {
     'Content-Type': 'application/json',
   },
