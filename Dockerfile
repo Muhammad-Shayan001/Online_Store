@@ -22,7 +22,5 @@ RUN rm -rf node_modules src components pages services scripts public \
 RUN cd backend && npm install --omit=dev
 
 ENV NODE_ENV=production
-ENV PORT=5000
-EXPOSE 5000
 
 CMD ["node", "backend/server.js"]
