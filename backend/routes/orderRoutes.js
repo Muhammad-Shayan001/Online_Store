@@ -36,11 +36,22 @@ router.route('/')
   .get(protect, admin, asyncHandler(getOrders));
 
 
+router.route('/myorders').get(protect, asyncHandler(getMyOrders));
+
 // Order tracking
 router.route('/:id/track').get(optionalProtect, asyncHandler(trackOrder));
 
+router.route('/:id')
+  .get(optionalProtect, asyncHandler(getOrderById));
+
+router.route('/:id/pay')
+  .put(protect, asyncHandler(updateOrderToPaid));
+
+router.route('/:id/deliver')
+  .put(protect, admin, asyncHandler(updateOrderToDelivered));
+
 // Cancel order with reason
-router.route('/:id/cancel').put(protect, asyncHandler(cancelOrderWithReason));
+router.route('/:id/cancel').put(protect, asyncHandler(cancelOrder));
 
 // Return/refund request
 router.route('/:id/return').post(protect, asyncHandler(requestReturn));
