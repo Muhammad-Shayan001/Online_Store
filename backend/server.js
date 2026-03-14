@@ -90,10 +90,11 @@ app.use('/api/coupons', couponRoutes);
 
 // Serve frontend in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '..', 'frontend')));
+  const frontendPath = path.join(__dirname, '../frontend');
+  app.use(express.static(frontendPath));
 
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html'));
+    res.sendFile(path.resolve(__dirname, '../frontend', 'index.html'));
   });
 } else {
   app.get('/', (req, res) => {
