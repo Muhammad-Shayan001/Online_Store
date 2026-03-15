@@ -18,7 +18,7 @@ const links = [
 
 const generateSitemap = async () => {
   const sitemap = new SitemapStream({ hostname: 'https://www.onlinestore.com' });
-  const writeStream = createWriteStream(path.resolve(__dirname, '../public/sitemap.xml'));
+  const writeStream = createWriteStream(path.resolve(__dirname, '../frontend/sitemap.xml'));
 
   sitemap.pipe(writeStream);
 

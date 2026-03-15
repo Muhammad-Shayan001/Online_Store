@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/generate-sitemap.cjs",
-    "preview": "vite preview"
+    "install:backend": "cd backend && npm install",
+    "build": "npm run install:backend && vite build && node scripts/generate-sitemap.cjs",
+    "preview": "vite preview",
+    "start": "node backend/server.js"
   },
   "dependencies": {
     "@google/genai": "^1.40.0",
