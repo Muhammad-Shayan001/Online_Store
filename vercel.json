@@ -1,3 +1,8 @@
 {
-  "outputDirectory": "frontend"
+  "buildCommand": "vite build && node scripts/generate-sitemap.cjs",
+  "outputDirectory": "frontend",
+  "framework": null,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
