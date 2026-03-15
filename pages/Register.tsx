@@ -37,8 +37,13 @@ const Register: React.FC<RegisterProps> = ({ setUser }) => {
       setStep(2);
       toast.success("Verification code sent to " + email);
     } catch (err: any) {
-      setError(err.toString());
-      toast.error(err.response?.data?.message || "Registration failed");
+      if (err.includes('already exists')) {
+        toast.error("Account already exists. Please login to verify.");
+        setTimeout(() => navigate('/login'), 2000);
+      } else {
+        setError(err.toString());
+        toast.error(err.response?.data?.message || "Registration failed");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -57,7 +62,6 @@ const Register: React.FC<RegisterProps> = ({ setUser }) => {
           ...updatedUser,
           id: updatedUser._id,
           role: updatedUser.isAdmin ? UserRole.ADMIN : UserRole.MEMBER,
-          // verified should be true from backend now
           verified: true, 
           orderCount: 0
       });
@@ -75,8 +79,8 @@ const Register: React.FC<RegisterProps> = ({ setUser }) => {
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-4 animate-fade-in">
       <div className="bg-white p-10 rounded-3xl shadow-2xl border border-slate-100 w-full max-w-md">
-        <h2 className="text-3xl font-serif text-slate-900 mb-2">Join Our Community</h2>
-        <p className="text-slate-500 mb-8">Experience premium shopping with member benefits.</p>
+        <h2 className="text-3xl font-serif text-slate-900 mb-2">{step === 1 ? 'Join Our Community' : 'Verify Your Email'}</h2>
+        <p className="text-slate-500 mb-8">{step === 1 ? 'Experience premium shopping with member benefits.' : 'Please enter the 6-digit code sent to your email.'}</p>
         
         {error && <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">{error}</div>}
 
@@ -84,15 +88,15 @@ const Register: React.FC<RegisterProps> = ({ setUser }) => {
           <form onSubmit={handleRegister} className="space-y-6">
             <div>
               <label className="block text-sm font-semibold mb-1">Full Name</label>
-              <input required type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full p-3 rounded-xl border border-slate-200 outline-none" placeholder="John Doe" />
+              <input required type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600" placeholder="John Doe" />
             </div>
             <div>
               <label className="block text-sm font-semibold mb-1">Email</label>
-              <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-3 rounded-xl border border-slate-200 outline-none" placeholder="name@example.com" />
+              <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600" placeholder="name@example.com" />
             </div>
              <div>
               <label className="block text-sm font-semibold mb-1">Password</label>
-              <input required minLength={6} type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-3 rounded-xl border border-slate-200 outline-none" placeholder="••••••••" />
+              <input required minLength={6} type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600" placeholder="••••••••" />
             </div>
             <button disabled={isLoading} className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-indigo-600 transition-all shadow-lg disabled:opacity-50">
               {isLoading ? 'Sending...' : 'Send Verification Code'}
@@ -100,13 +104,32 @@ const Register: React.FC<RegisterProps> = ({ setUser }) => {
           </form>
         ) : (
           <form onSubmit={handleVerify} className="space-y-6">
-            <p className="text-sm bg-indigo-50 p-4 rounded-xl text-indigo-800">Please enter the 6-digit code sent to your email.</p>
+            <div className="bg-indigo-50 p-4 rounded-xl">
+               <p className="text-sm text-indigo-800 text-center">We've sent a code to <span className="font-bold">{email}</span></p>
+            </div>
             <div>
-              <label className="block text-sm font-semibold mb-1">Verification Code</label>
-              <input required type="text" value={otp} onChange={(e) => setOtp(e.target.value)} className="w-full p-3 text-center tracking-widest text-2xl font-bold rounded-xl border border-slate-200 outline-none" placeholder="000000" />
+              <label className="block text-sm font-semibold mb-1 text-center">Verification Code</label>
+              <input 
+                required 
+                type="text" 
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                value={otp} 
+                onChange={(e) => setOtp(e.target.value)} 
+                className="w-full p-3 text-center tracking-widest text-3xl font-bold rounded-xl border border-slate-200 outline-none focus:border-indigo-600" 
+                placeholder="000000" 
+              />
             </div>
             <button disabled={isLoading} className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg disabled:opacity-50">
               {isLoading ? 'Verifying...' : 'Verify & Register'}
+            </button>
+            <button 
+              type="button"
+              onClick={() => setStep(1)}
+              className="w-full py-2 text-slate-500 hover:text-slate-700 text-sm font-medium"
+            >
+              Back to Registration
             </button>
           </form>
         )}
