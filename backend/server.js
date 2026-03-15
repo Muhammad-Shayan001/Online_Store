@@ -39,8 +39,8 @@ app.use(cookieParser());
 // Robust CORS for Vercel and Railway
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow Vercel, localhost, or requests with no origin (like mobile apps/postman)
-    if (!origin || origin.includes('vercel.app') || origin.includes('localhost')) {
+    // Allow Vercel, Railway, localhost, or requests with no origin (like proxies/mobile apps/postman)
+    if (!origin || origin.includes('vercel.app') || origin.includes('railway.app') || origin.includes('localhost')) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
