@@ -4,7 +4,8 @@ const User = require('../models/User');
 
 (async () => {
   try {
-    dotenv.config({ path: './.env' });
+    const path = require('path');
+    dotenv.config({ path: path.join(__dirname, '../.env') });
     await connectDB();
 
     const email = process.argv[2];

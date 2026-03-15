@@ -11,17 +11,18 @@ const bcrypt = require('bcryptjs');
 // @access  Public
 const authUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  console.log(`Debug: Login attempt for ${email}`);
-
+  console.log(`Debug: Login attempt for ${email}. Body:`, JSON.stringify(req.body));
   const user = await User.findOne({ email });
 
-  // Simple password check (assuming storage is clear text OR hashed - implementing hash check)
-  // Since we use bcryptjs, we should use compare.
-  // BUT: The user prompt asked for "bcrypt password hashing".
-  // So I'll assume usage of bcrypt.compare below.
-  const bcrypt = require('bcryptjs');
+  if (!user) {
+    res.status(401);
+    throw new Error('Invalid email or password (User not found)');
+  }
 
-  if (user && (await bcrypt.compare(password, user.password))) {
+  const isMatch = await bcrypt.compare(password, user.password);
+  console.log(`Debug: Password match for ${email}: ${isMatch}`);
+
+  if (isMatch) {
     console.log(`Debug: Password valid for ${email}. isVerified: ${user.isVerified}`);
     
     // Check if user is verified, if not send OTP again
@@ -67,7 +68,7 @@ const authUser = asyncHandler(async (req, res) => {
     });
   } else {
     res.status(401);
-    throw new Error('Invalid email or password');
+    throw new Error('Invalid email or password (Invalid credentials)');
   }
 });
 
@@ -76,7 +77,6 @@ const authUser = asyncHandler(async (req, res) => {
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
-  const bcrypt = require('bcryptjs');
 
   const userExists = await User.findOne({ email });
 
@@ -194,9 +194,6 @@ const updateUserProfile = async (req, res) => {
     user.name = req.body.name || user.name;
     user.email = req.body.email || user.email;
     if (req.body.password) {
-      // bcrypt hash handled by pre-save or manual
-      // I did manual in register. I need manual here too.
-      const bcrypt = require('bcryptjs');
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(req.body.password, salt);
     }
