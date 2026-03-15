@@ -9,9 +9,6 @@ RUN npm install --legacy-peer-deps
 COPY . .
 RUN NODE_OPTIONS="--max-old-space-size=512" npm run build
 
-# Move built frontend to final location
-RUN mv dist frontend
-
 # Clean up frontend source & node_modules (keep only backend + built frontend)
 RUN rm -rf node_modules src components pages services scripts public \
     package.json package-lock.json vite.config.ts tsconfig.json \
