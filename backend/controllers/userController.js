@@ -11,16 +11,19 @@ const bcrypt = require('bcryptjs');
 // @access  Public
 const authUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  console.log(`Debug: Login attempt for ${email}. Body:`, JSON.stringify(req.body));
-  const user = await User.findOne({ email });
+  const normalizedEmail = email.toLowerCase();
+  console.log(`Debug: Login attempt for ${normalizedEmail}. Body keys:`, Object.keys(req.body));
+  
+  const user = await User.findOne({ email: normalizedEmail });
 
   if (!user) {
+    console.log(`Debug: No user found for ${normalizedEmail}`);
     res.status(401);
     throw new Error('Invalid email or password (User not found)');
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
-  console.log(`Debug: Password match for ${email}: ${isMatch}`);
+  console.log(`Debug: Password match for ${normalizedEmail}: ${isMatch}`);
 
   if (isMatch) {
     console.log(`Debug: Password valid for ${email}. isVerified: ${user.isVerified}`);
@@ -77,8 +80,9 @@ const authUser = asyncHandler(async (req, res) => {
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
+  const normalizedEmail = email.toLowerCase();
 
-  const userExists = await User.findOne({ email });
+  const userExists = await User.findOne({ email: normalizedEmail });
 
   if (userExists) {
     res.status(400);
@@ -95,11 +99,11 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const user = await User.create({
     name,
-    email,
+    email: normalizedEmail,
     password: hashedPassword,
     otp,
     otpExpiry,
-    isAdmin: email === process.env.ADMIN_EMAIL
+    isAdmin: normalizedEmail === process.env.ADMIN_EMAIL
   });
 
   if (user) {
@@ -192,7 +196,7 @@ const updateUserProfile = async (req, res) => {
 
   if (user) {
     user.name = req.body.name || user.name;
-    user.email = req.body.email || user.email;
+    user.email = req.body.email ? req.body.email.toLowerCase() : user.email;
     if (req.body.password) {
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(req.body.password, salt);
@@ -302,7 +306,8 @@ const updateUser = asyncHandler(async (req, res) => {
 // @access  Public
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
-  const user = await User.findOne({ email });
+  const normalizedEmail = email.toLowerCase();
+  const user = await User.findOne({ email: normalizedEmail });
 
   if (!user) {
     res.status(404);

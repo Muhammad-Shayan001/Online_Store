@@ -5,12 +5,15 @@ const protect = async (req, res, next) => {
   let token;
 
   token = req.cookies?.jwt;
+  console.log(`Debug: Auth token present: ${!!token}`);
 
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log(`Debug: Token decoded for userId: ${decoded.userId}`);
 
       req.user = await User.findById(decoded.userId).select('-password');
+      if (!req.user) console.log(`Debug: User ID ${decoded.userId} not found in DB`);
 
       next();
     } catch (error) {
