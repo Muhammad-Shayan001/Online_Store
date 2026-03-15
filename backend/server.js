@@ -9,7 +9,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit'); // Security Hardening
-const path = require('path');
 const connectDB = require('./config/db');
 const logger = require('./utils/logger'); // Centralized Logs
 const cookieParser = require('cookie-parser');
