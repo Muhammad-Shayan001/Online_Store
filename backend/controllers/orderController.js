@@ -101,34 +101,39 @@ const addOrderItems = async (req, res) => {
       status: 'Issued'
   });
 
-    // Send Email & SMS
+    // Send Email & SMS in background
     const recipientEmail = req.user ? req.user.email : shippingAddress.email;
     const recipientName = req.user ? req.user.name : 'Guest';
     const recipientPhone = req.user && req.user.phone ? req.user.phone : shippingAddress.phone;
+    
     if (recipientEmail) {
       const userObj = { name: recipientName, email: recipientEmail };
-      // Send Order Confirmation Email
-      await sendOrderConfirmationEmail(userObj, createdOrder);
-      await EmailLog.create({
-        recipient: recipientEmail,
-        subject: `Order Confirmation ${createdOrder._id}`,
-        type: 'ORDER_CONFIRMATION',
-        status: 'Sent'
-      });
-      // Send Invoice Email
-      await sendInvoiceEmail(userObj, createdOrder);
-      await EmailLog.create({
-        recipient: recipientEmail,
-        subject: `Invoice ${invoice.invoiceNumber}`,
-        type: 'INVOICE',
-        status: 'Sent'
-      });
-      // Send SMS if phone exists
-      if (recipientPhone) {
-      try {
-        await sendSMS(recipientPhone, `Order placed: ${createdOrder._id}. Thank you for your purchase!`);
-      } catch (err) { /* log error or ignore */ }
-      }
+      (async () => {
+        try {
+          // Send Order Confirmation Email
+          await sendOrderConfirmationEmail(userObj, createdOrder);
+          await EmailLog.create({
+            recipient: recipientEmail,
+            subject: `Order Confirmation ${createdOrder._id}`,
+            type: 'ORDER_CONFIRMATION',
+            status: 'Sent'
+          });
+          // Send Invoice Email
+          await sendInvoiceEmail(userObj, createdOrder);
+          await EmailLog.create({
+            recipient: recipientEmail,
+            subject: `Invoice ${invoice.invoiceNumber}`,
+            type: 'INVOICE',
+            status: 'Sent'
+          });
+          // Send SMS if phone exists
+          if (recipientPhone) {
+            await sendSMS(recipientPhone, `Order placed: ${createdOrder._id}. Thank you for your purchase!`);
+          }
+        } catch (err) {
+          console.error('Background notification error:', err);
+        }
+      })();
     }
 
   res.status(201).json(createdOrder);

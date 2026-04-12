@@ -113,6 +113,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cart, user, emptyCart }) => {
           colors: ['#4f46e5', '#ec4899', '#ffb100']
         });
         toast.success(`Order Placed! Invoice: ${createdOrder.invoiceNumber}`);
+        emptyCart();
         setTimeout(() => {
           navigate(user ? '/profile' : '/');
         }, 1500);

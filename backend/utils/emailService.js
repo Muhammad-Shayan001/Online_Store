@@ -10,6 +10,9 @@ if (!emailUser || !emailPass) {
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
+  pool: true,
+  maxConnections: 5,
+  maxMessages: 100,
   auth: {
     user: emailUser,
     pass: emailPass,
