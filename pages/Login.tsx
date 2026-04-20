@@ -74,7 +74,12 @@ const Login: React.FC<LoginProps> = ({ setUser }) => {
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-1">Password</label>
+              <div className="flex justify-between mb-1">
+                <label className="block text-sm font-semibold">Password</label>
+                <Link to="/forgot-password" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                  Forgot your password?
+                </Link>
+              </div>
               <input 
                 required
                 type="password" 

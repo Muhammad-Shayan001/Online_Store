@@ -46,19 +46,19 @@ const authUser = asyncHandler(async (req, res) => {
          <p>This code expires in 10 minutes.</p>
        `;
 
-       // Send email in background so the UI doesn't hang
-       (async () => {
-         try {
-          console.log(`Attempting to send OTP email to ${email}`);
-          const emailSent = await sendEmail(email, emailSubject, emailHtml);
-          console.log(`Email send result for ${email}: ${emailSent}`);
-          if (!emailSent) {
-               console.error("CRITICAL: Email returned false!");
-          }
-         } catch (error) {
-          console.error("Login OTP email failed", error);
-         }
-       })();
+       // Send email and wait for it
+       try {
+        console.log(`Attempting to send OTP email to ${email}`);
+        const emailSent = await sendEmail(email, emailSubject, emailHtml);
+        console.log(`Email send result for ${email}: ${emailSent}`);
+        if (!emailSent) {
+             console.error("CRITICAL: Email returned false!");
+             res.status(500);
+             throw new Error('Email could not be sent. Please contact support.');
+        }
+       } catch (error) {
+        console.error("Login OTP email failed", error);
+       }
     } else {
         console.log(`User ${user.email} is already verified.`);
     }
@@ -110,7 +110,7 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   if (user) {
-    // Send Real Email in background so UI isn't blocked
+    // Send Real Email and wait to ensure we don't drop the connection too early
     const emailSubject = "Verify your email - Online Store";
     const emailHtml = `
       <h1>Verify Account</h1>
@@ -118,15 +118,13 @@ const registerUser = asyncHandler(async (req, res) => {
       <p>This code expires in 10 minutes.</p>
     `;
 
-    (async () => {
-      try {
-        console.log(`Attempting to send OTP email to ${email} (Register)`);
-        const emailSent = await sendEmail(email, emailSubject, emailHtml);
-        console.log(`Email send result for ${email}: ${emailSent}`);
-      } catch (error) {
-         console.error("Email send failed during registration", error);
-      }
-    })();
+    try {
+      console.log(`Attempting to send OTP email to ${email} (Register)`);
+      const emailSent = await sendEmail(email, emailSubject, emailHtml);
+      console.log(`Email send result for ${email}: ${emailSent}`);
+    } catch (error) {
+       console.error("Email send failed during registration", error);
+    }
 
     generateToken(res, user._id);
 
@@ -345,16 +343,25 @@ const forgotPassword = asyncHandler(async (req, res) => {
     <p>This link expires in 10 minutes.</p>
   `;
 
-  // Send email in background
-  (async () => {
-    try {
-      await sendEmail(user.email, 'Password Reset Request', message);
-    } catch (error) {
-      console.error('Password reset email failed:', error);
+  // Send email and wait for it to ensure it completes before response
+  try {
+    const emailSent = await sendEmail(user.email, 'Password Reset Request', message);
+    if (!emailSent) {
+      // In case credentials are not configured or transporter fails
+      res.status(500);
+      throw new Error('Email could not be sent');
     }
-  })();
+  } catch (error) {
+    // If it fails, clear the token so the user can try again
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+    console.error('Password reset email failed:', error);
+    res.status(500);
+    throw new Error('Email could not be sent');
+  }
 
-  res.status(200).json({ success: true, data: 'Email process started' });
+  res.status(200).json({ success: true, data: 'Email sent successfully' });
 });
 
 // @desc    Reset Password
@@ -386,16 +393,12 @@ const resetPassword = asyncHandler(async (req, res) => {
 
   await user.save();
   
-  // Send success email in background
-  const message = `
-    <h1>Password Reset Successful</h1>
-    <p>Your password has been successfully reset. You can now login with your new password.</p>
-  `;
-  (async () => {
-    try {
-        await sendEmail(user.email, 'Password Reset Successful', message);
-    } catch(e) { /* ignore */ }
-  })();
+  // Wait for the success email
+  try {
+      await sendEmail(user.email, 'Password Reset Successful', message);
+  } catch(e) {
+      console.error('Failed to send success email:', e);
+  }
 
   res.status(200).json({ success: true, data: 'Password reset success' });
 });
