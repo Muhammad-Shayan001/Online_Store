@@ -12,9 +12,10 @@ const ForgotPassword = () => {
         setLoading(true);
         try {
             await UserService.forgotPassword(email);
-            toast.success('Password reset email sent');
+            toast.success('Password reset email sent (check spam folder too!)');
             setEmail('');
         } catch (error: any) {
+            console.error("Forgot password error:", error.response?.data || error.message);
             toast.error(error.response?.data?.message || 'Failed to send email');
         } finally {
             setLoading(false);
