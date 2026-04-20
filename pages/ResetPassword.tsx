@@ -25,7 +25,9 @@ const ResetPassword = () => {
             setConfirmPassword('');
             navigate('/login');
         } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Failed to reset password');
+            console.error("Reset password error:", error);
+            const errMsg = typeof error === 'string' ? error : (error.response?.data?.message || 'Failed to reset password');
+            toast.error(errMsg);
         } finally {
             setLoading(false);
         }

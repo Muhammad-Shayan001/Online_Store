@@ -15,8 +15,9 @@ const ForgotPassword = () => {
             toast.success('Password reset email sent (check spam folder too!)');
             setEmail('');
         } catch (error: any) {
-            console.error("Forgot password error:", error.response?.data || error.message);
-            toast.error(error.response?.data?.message || 'Failed to send email');
+            console.error("Forgot password error:", error);
+            const errMsg = typeof error === 'string' ? error : (error.response?.data?.message || error.message || 'Failed to send email');
+            toast.error(errMsg);
         } finally {
             setLoading(false);
         }
