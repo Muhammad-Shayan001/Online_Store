@@ -1,8 +1,11 @@
 import axios from 'axios';
 
+const viteEnv = (import.meta as any).env || {};
+const apiBaseURL = viteEnv.VITE_API_URL || (viteEnv.DEV ? 'http://localhost:5000/api' : 'https://os-backend-production-92e5.up.railway.app/api');
+
 // Create an Axios instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://os-backend-production-92e5.up.railway.app/api',
+  baseURL: apiBaseURL,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -87,8 +90,8 @@ export const UserService = {
       const { data } = await api.put('/users/profile', userData);
       return data;
   },
-  forgotPassword: async (email: string) => {
-      const { data } = await api.post('/users/forgot-password', { email });
+  forgotPassword: async (credentials: any) => {
+      const { data } = await api.post('/users/forgot-password', credentials, { timeout: 12000 });
       return data;
   },
   resetPassword: async (token: string, password: string) => {

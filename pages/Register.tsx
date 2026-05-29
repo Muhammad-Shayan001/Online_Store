@@ -31,11 +31,11 @@ const Register: React.FC<RegisterProps> = ({ setUser }) => {
          ...userData,
          id: userData._id,
          role: userData.isAdmin ? UserRole.ADMIN : UserRole.MEMBER,
-         verified: false, // OTP pending
+         verified: true,
          orderCount: 0 
       });
-      setStep(2);
-      toast.success("Verification code sent to " + email);
+      toast.success("Registration successful! Welcome to the Online Store.");
+      navigate('/');
     } catch (err: any) {
       if (err.includes('already exists')) {
         toast.error("Account already exists. Please login to verify.");

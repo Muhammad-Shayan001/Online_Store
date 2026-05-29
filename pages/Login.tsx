@@ -23,14 +23,9 @@ const Login: React.FC<LoginProps> = ({ setUser }) => {
     
     try {
         const user = await UserService.login({ email, password });
-        if (user && !user.isVerified) {
-            setStep(2);
-            toast.success("Verification code sent to your email.");
-        } else {
-            setUser(user);
-            toast.success(`Welcome back, ${user.name}!`);
-            navigate('/');
-        }
+        setUser(user);
+        toast.success(`Welcome back, ${user.name}!`);
+        navigate('/');
     } catch (err: any) {
         toast.error(err.toString() || 'Login failed');
     } finally {

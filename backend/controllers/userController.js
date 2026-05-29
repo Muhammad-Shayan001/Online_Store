@@ -28,41 +28,6 @@ const authUser = asyncHandler(async (req, res) => {
   if (isMatch) {
     console.log(`Debug: Password valid for ${email}. isVerified: ${user.isVerified}`);
     
-    // Check if user is verified, if not send OTP again
-    if (!user.isVerified) {
-       console.log(`User ${user.email} is not verified. Resending OTP.`); 
-       const otp = Math.floor(100000 + Math.random() * 900000).toString();
-       const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
-
-       user.otp = otp;
-       user.otpExpiry = otpExpiry;
-       await user.save();
-       console.log(`New OTP generated for ${user.email}: ${otp}`);
-
-       const emailSubject = "Verify your email - Online Store";
-       const emailHtml = `
-         <h1>Verify Account</h1>
-         <p>Your new verification code is: <strong>${otp}</strong></p>
-         <p>This code expires in 10 minutes.</p>
-       `;
-
-       // Send email and wait for it
-       try {
-        console.log(`Attempting to send OTP email to ${email}`);
-        const emailSent = await sendEmail(email, emailSubject, emailHtml);
-        console.log(`Email send result for ${email}: ${emailSent}`);
-        if (!emailSent) {
-             console.error("CRITICAL: Email returned false!");
-             res.status(500);
-             throw new Error('Email could not be sent. Please contact support.');
-        }
-       } catch (error) {
-        console.error("Login OTP email failed", error);
-       }
-    } else {
-        console.log(`User ${user.email} is already verified.`);
-    }
-
     generateToken(res, user._id);
 
     res.json({
@@ -92,10 +57,6 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error('User already exists');
   }
 
-  // Generate OTP
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
-
   // Hash Password
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
@@ -104,28 +65,11 @@ const registerUser = asyncHandler(async (req, res) => {
     name,
     email: normalizedEmail,
     password: hashedPassword,
-    otp,
-    otpExpiry,
+    isVerified: true,
     isAdmin: normalizedEmail === process.env.ADMIN_EMAIL
   });
 
   if (user) {
-    // Send Real Email and wait to ensure we don't drop the connection too early
-    const emailSubject = "Verify your email - Online Store";
-    const emailHtml = `
-      <h1>Verify Account</h1>
-      <p>Your verification code is: <strong>${otp}</strong></p>
-      <p>This code expires in 10 minutes.</p>
-    `;
-
-    try {
-      console.log(`Attempting to send OTP email to ${email} (Register)`);
-      const emailSent = await sendEmail(email, emailSubject, emailHtml);
-      console.log(`Email send result for ${email}: ${emailSent}`);
-    } catch (error) {
-       console.error("Email send failed during registration", error);
-    }
-
     generateToken(res, user._id);
 
     res.status(201).json({
@@ -133,7 +77,7 @@ const registerUser = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       isAdmin: user.isAdmin,
-      message: "Please check email for OTP"
+      isVerified: user.isVerified
     });
   } else {
     res.status(400);
@@ -308,60 +252,34 @@ const updateUser = asyncHandler(async (req, res) => {
 // @route   POST /api/users/forgot-password
 // @access  Public
 const forgotPassword = asyncHandler(async (req, res) => {
-  const { email } = req.body;
-  const normalizedEmail = email.toLowerCase();
+  const { email, password } = req.body;
+  const normalizedEmail = (email || '').toLowerCase().trim();
+  if (!normalizedEmail) {
+    res.status(400);
+    throw new Error('Email is required');
+  }
+  if (!password) {
+    res.status(400);
+    throw new Error('New password is required');
+  }
+
   const user = await User.findOne({ email: normalizedEmail });
 
   if (!user) {
     res.status(404);
-    throw new Error('User not found');
+    throw new Error('User with this email does not exist');
   }
 
-  // Generate token
-  const resetToken = crypto.randomBytes(20).toString('hex');
+  // Hash new password
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(password, salt);
 
-  // Hash token and set to resetPasswordToken field
-  user.resetPasswordToken = crypto
-    .createHash('sha256')
-    .update(resetToken)
-    .digest('hex');
-
-  // Set expire
-  user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
 
   await user.save();
 
-  // Create reset url (frontend url)
-  // Use referer or origin header if env not set, but better to rely on env vars
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const resetUrl = `${frontendUrl}/#/reset-password/${resetToken}`;
-
-  const message = `
-    <h1>You have requested a password reset</h1>
-    <p>Please go to this link to reset your password:</p>
-    <a href="${resetUrl}">${resetUrl}</a>
-    <p>This link expires in 10 minutes.</p>
-  `;
-
-  // Send email and wait for it to ensure it completes before response
-  try {
-    const emailSent = await sendEmail(user.email, 'Password Reset Request', message);
-    if (!emailSent) {
-      // In case credentials are not configured or transporter fails
-      res.status(500);
-      throw new Error('Email could not be sent');
-    }
-  } catch (error) {
-    // If it fails, clear the token so the user can try again
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
-    await user.save();
-    console.error('Password reset email failed:', error);
-    res.status(500);
-    throw new Error('Email could not be sent');
-  }
-
-  res.status(200).json({ success: true, data: 'Email sent successfully' });
+  res.status(200).json({ success: true, data: 'Password updated successfully' });
 });
 
 // @desc    Reset Password

@@ -28,7 +28,6 @@ import ShippingPolicy from './pages/legal/ShippingPolicy';
 import RefundPolicy from './pages/legal/RefundPolicy';
 import NotFound from './pages/NotFound';
 import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
 import Wishlist from './pages/Wishlist';
 import { User, Product, CartItem } from './types';
 import { ProductService, UserService, OrderService } from './services/api';
@@ -214,7 +213,6 @@ const App: React.FC = () => {
             <Route path="/login" element={<Login setUser={setUser} />} />
             <Route path="/register" element={<Register setUser={setUser} />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password/:token" element={<ResetPassword />} />
             <Route path="/profile" element={user ? <Profile user={user} orders={[]} setOrders={() => {}} logout={handleLogout} cart={cart} /> : <Navigate to="/login" />} />
             <Route path="/order/:id" element={user ? <OrderDetails /> : <Navigate to="/login" />} />
             <Route path="/about" element={<About />} />
