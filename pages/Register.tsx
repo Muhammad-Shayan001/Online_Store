@@ -99,7 +99,7 @@ const Register: React.FC<RegisterProps> = ({ setUser }) => {
               <input required minLength={6} type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600" placeholder="••••••••" />
             </div>
             <button disabled={isLoading} className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-indigo-600 transition-all shadow-lg disabled:opacity-50">
-              {isLoading ? 'Sending...' : 'Send Verification Code'}
+              {isLoading ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
         ) : (
